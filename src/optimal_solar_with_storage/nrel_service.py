@@ -39,7 +39,8 @@ Request Parameters:
 """
 from dataclasses import dataclass
 from io import StringIO
-from typing import List, Tuple, Iterable, NamedTuple
+from pathlib import Path
+from typing import List, Tuple, Iterable, NamedTuple, Union
 
 from requests.packages.urllib3 import Retry
 import requests
@@ -75,6 +76,25 @@ class UserInfo(NamedTuple):
 class Location(NamedTuple):
     latitude: float
     longitude: float
+
+class CachedNRELData:
+    def __init__(self, stored_data_location:Union[str, Path]):
+        if isinstance(stored_data_location, str):
+            stored_data_location=Path(stored_data_location)
+        if not stored_data_location.exists():
+            raise FileNotFoundError(f"{stored_data_location!s} not found")
+        self.folder = stored_data_location
+
+    def query_for_data(self, location:Location, year:int, attributes:Iterable[str]):
+        file = next(self.folder.glob(f'*{year}*'))
+        if file is None:
+            raise LookupError(f"Data Not Stored in this folder")
+        with file.open() as f:
+            data = f.read()
+
+        return data
+        
+
 
 
 class NREL_Data_Source:
